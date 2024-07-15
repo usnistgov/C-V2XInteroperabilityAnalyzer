@@ -124,11 +124,31 @@ saej2735_bsm_refdf = pd.DataFrame(saej2735_bsm_ref, columns = ["field", "parent"
 
 saej2735_spat_ref = [
     ["j2735_2016.timeStamp", "j2735_2016.value_element", 0, 0, 527040, False],
-    ["j2735_2016.region", "j2735_2016.id_element", 0, 0, 6553, False],
+    ["j2735_2016.region", "j2735_2016.id_element", 0, 0, 65535, False],
     ["j2735_2016.id", "j2735_2016.id_element", 0, 0, 65535, True],
     ["j2735_2016.revision", "j2735_2016.IntersectionState_element", 0, 0, 127, True],
+    ["j2735_2016.status", "j2735_2016.IntersectionState_element", 2, 16, 00, True],
+    ["j2735_2016.moy", "j2735_2016.IntersectionState_element", 0, 0, 527040, False],
+    ["j2735_2016.timeStamp", "j2735_2016.IntersectionState_element", 0, 0, 65535, False],
+    ["j2735_2016.laneID", "j2735_2016.IntersectionState_element", 0, 0, 255, False],
     ["j2735_2016.signalGroup", "j2735_2016.MovementState_element", 0, 0, 255, True],
     ["j2735_2016.eventState", "j2735_2016.MovementEvent_element", 0, 0, 9, True],
+    ["j2735_2016.startTime", "j2735_2016.timing_element", 0, 0, 36001, False],
+    ["j2735_2016.mindEndTime", "j2735_2016.timing_element", 0, 0, 36001, False],
+    ["j2735_2016.maxEndTime", "j2735_2016.timing_element", 0, 0, 36001, False],
+    ["j2735_2016.likelyTime", "j2735_2016.timing_element", 0, 0, 36001, False],
+    ["j2735_2016.confidence", "j2735_2016.timing_element", 0, 0, 15, False],
+    ["j2735_2016.nextTime", "j2735_2016.timing_element", 0, 0, 36001, False],
+    ["j2735_2016.type", "j2735_2016.AdvisorySpeed_element", 0, 0, 3, False],
+    ["j2735_2016.speed", "j2735_2016.AdvisorySpeed_element", 0, 0, 500, False],
+    ["j2735_2016.confidence", "j2735_2016.AdvisorySpeed_element", 0, 0, 7, False],
+    ["j2735_2016.distance", "j2735_2016.AdvisorySpeed_element", 0, 0, 10000, False],
+    ["j2735_2016.class", "j2735_2016.AdvisorySpeed_element", 0, 0, 255, False],
+    ["j2735_2016.connectionID", "j2735_2016.ConnectionManeuverAssist_element", 0, 0, 10000, False],
+    ["j2735_2016.queueLength", "j2735_2016.ConnectionManeuverAssist_element", 0, 0, 10000, False],
+    ["j2735_2016.availableStorageLength", "j2735_2016.ConnectionManeuverAssist_element", 0, 0, 10000, False],
+    ["j2735_2016.waitOnStop", "j2735_2016.ConnectionManeuverAssist_element", 3, 00, 00, False],
+    ["j2735_2016.pedBicycleDetect", "j2735_2016.ConnectionManeuverAssist_element", 3, 00, 00, False],
 ]
 saej2735_spat_refdf = pd.DataFrame(saej2735_spat_ref, columns = ["field", "parent", "eval method", "val1", "val2", "mandatory"])
 
