@@ -153,12 +153,48 @@ saej2735_spat_ref = [
 saej2735_spat_refdf = pd.DataFrame(saej2735_spat_ref, columns = ["field", "parent", "eval method", "val1", "val2", "mandatory"])
 
 saej2735_rsa_ref = [
-    ["j2735_2016.msgCnt", "j2735_2016.value_element", 0, 0, 127, True],
-    ["j2735_2016.typeEvent", "j2735_2016.value_element", 0, 0, 65535, True],
+    # ["j2735_2016.msgCnt", "j2735_2016.value_element", 0, 0, 127, True],
+    # ["j2735_2016.typeEvent", "j2735_2016.value_element", 0, 0, 65535, True],
 ]
 saej2735_rsa_refdf = pd.DataFrame(saej2735_rsa_ref, columns = ["field", "parent", "eval method", "val1", "val2", "mandatory"])
 
 saej2735_tim_ref = [
+    ["j2735_2016.msgCnt", "j2735_2016.value_element", 0, 0, 127, True],
+    ["j2735_2016.timeStamp", "j2735_2016.value_element", 0, 0, 527040, False],
+    ["j2735_2016.packetID", "j2735_2016.value_element", 1, 9, 00, False],
+    ["j2735_2016.sspTimRights", "j2735_2016.TravelerDataFrame_element", 0, 0, 31, True],
+    ["j2735_2016.frameType", "j2735_2016.TravelerDataFrame_element", 0, 0, 3, True],
+    ["j2735_2016.lat", "j2735_2016.position_element", 0, -900000000, 900000001, True],
+    ["j2735_2016.long", "j2735_2016.position_element", 0, -1799999999, 1800000001, True],
+    ["j2735_2016.elevation", "j2735_2016.position_element", 0, -4096, 61439, False],
+    ["j2735_2016.viewAngle", "j2735_2016.roadSignID_element", 2, 16, 00, True],
+    ["j2735_2016.mutcdCode", "j2735_2016.roadSignID_element", 0, 0, 6, False],
+    ["j2735_2016.crc", "j2735_2016.roadSignID_element", 1, 2, 00, False],
+    ["j2735_2016.startYear", "j2735_2016.TravelerDataFrame_element", 0, 0, 4095, False],
+    ["j2735_2016.startTime", "j2735_2016.TravelerDataFrame_element", 0, 0, 527040, True],
+    ["j2735_2016.durationTime", "j2735_2016.TravelerDataFrame_element", 0, 0, 32000, True],
+    ["j2735_2016.priority", "j2735_2016.TravelerDataFrame_element", 0, 0, 7, True],
+    ["j2735_2016.sspLocationRights", "j2735_2016.TravelerDataFrame_element", 0, 0, 31, True],
+    ["j2735_2016.region", "j2735_2016.id_element", 0, 0, 65535, False],
+    ["j2735_2016.id", "j2735_2016.id_element", 0, 0, 65535, False],
+    ["j2735_2016.lat", "j2735_2016.anchor_element", 0, -900000000, 900000001, False],
+    ["j2735_2016.long", "j2735_2016.anchor_element", 0, -1799999999, 1800000001, False],
+    ["j2735_2016.elevation", "j2735_2016.anchor_element", 0, -4096, 61439, False],
+    ["j2735_2016.laneWidth", "j2735_2016.GeographicalPath_element", 0, 0, 32767, False], 
+    ["j2735_2016.directionality", "j2735_2016.GeographicalPath_element", 0, 0, 3, False],
+    ["j2735_2016.closedPath", "j2735_2016.GeographicalPath_element", 3, 00, 00, False],
+    ["j2735_2016.direction", "j2735_2016.GeographicalPath_element", 2, 16, 00, False],
+    ["j2735_2016.scale", "j2735_2016.path_element", 0, 0, 15, False],
+    ["j2735_2016.x", "j2735_2016.node_XY6_element", 0, -32768, 32767, False],
+    ["j2735_2016.y", "j2735_2016.node_XY6_element", 0, -32768, 32767, False],
+    ["j2735_2016.NodeAttributeXY", "j2735_2016.localNode_element", 0, 0, 11, False],
+    ["j2735_2016.SegmentAttributeXY", "j2735_2016.disabled", 0, 0, 37, False],
+    ["j2735_2016.SegmentAttributeXY", "j2735_2016.enabled", 0, 0, 37, False],
+    ["j2735_2016.dWidth", "j2735_2016.attributes_element", 0, -512, 511, False],
+    ["j2735_2016.dElevation", "j2735_2016.attributes_element", 0, -512, 511, False],
+    ["j2735_2016.dWidth", "j2735_2016.attributes_element", 0, -512, 511, False],
+    ["j2735_2016.sspMsgRights1", "j2735_2016.TravelerDataFrame_element", 0, 0, 31, True],
+    ["j2735_2016.sspMsgRights2", "j2735_2016.TravelerDataFrame_element", 0, 0, 31, True],
 ]
 saej2735_tim_refdf = pd.DataFrame(saej2735_tim_ref, columns = ["field", "parent", "eval method", "val1", "val2", "mandatory"])
 
@@ -192,9 +228,14 @@ def octet_count(row, fieldlen):
         return False
     
 # Eval Method 2: bit string
-def bit_string(row, field):
+def bit_string(row, field, fieldname):
+    global iop_fail_desc
     target_bitlen = row.get('val1').values[0]
-    field_bitlen = int(re.findall(r"bit length (\d+)", field.attrib.get('showname'))[0])
+    try:
+        field_bitlen = int(re.findall(r"bit length (\d+)", field.attrib.get('showname'))[0])
+    except IndexError:
+        iop_fail_desc = iop_fail_desc + "Incorrect format for bit string: " + fieldname + "\n"
+        return False
     if (field_bitlen == target_bitlen):
         return True
     else:
@@ -298,7 +339,7 @@ def analyze(tree):
                                     eval_result = octet_count(row, fieldlen)
                                 case 2:
                                     print("Method: Bit string")
-                                    eval_result = bit_string(row, field)
+                                    eval_result = bit_string(row, field, fieldname)
                                 case 3:
                                     print("Method: Boolean")
                                     eval_result = boolean_check(row, fieldval)
@@ -327,14 +368,15 @@ def analyze(tree):
                             print("Interoperable:", iop_result)
                             print()
     # PRINT RESULTS
-    print("--------------------------------------------------------------------------------------\n")
+    print("-------------------------------------------------------------------------------------------------------------------\n")
     if (iop_result):
         print("Interoperability: PASS")
     else:
         print("Interoperability: FAIL")
-        print("\n" + iop_fail_desc)
+        print(iop_fail_desc)
         print(faildf)
-        print(assessdf)
+    print("\n-------------------------------------------------------------------------------------------------------------------\n")
+    print(assessdf)
 
 def main():
    try:
