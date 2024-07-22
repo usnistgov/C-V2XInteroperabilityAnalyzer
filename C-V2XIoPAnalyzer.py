@@ -275,6 +275,22 @@ saej2735_map_ref = [
 ]
 saej2735_map_refdf = pd.DataFrame(saej2735_map_ref, columns = ["field", "parent", "length", "eval method", "val1", "val2", "mandatory"]) 
 
+ieee16093_wsmp_ref = [
+    ["16093.version", "16093", 1, 0, 3, 3, True],
+    ["16093.subtype", "16093", 1, 0, 0, 0, True],
+    ["16093.option", "16093", 1, 3, 00, 00, True],
+    ["16093.n_ext", "16093", 1, 0, 0, 5, False],
+    ["16093.channel", "16093", 1, 1, 1, 00, False],
+    ["16093.rate", "16093", 1, 0, 2, 127, False],
+    ["16093.txpower", "16093", 1, 0, -128, 127, False],
+    ["16093.load", "16093", 1, 1, 1, 00, False],
+    ["16093.confidence", "16093", 1, 0, 0, 7, False],
+    ["16093.tpid", "16093", 1, 0, 0, 5, True],
+    ["16093.psid", "16093", 4, 0, 0, 4294967295, True],
+    ["16093.length", "16093", 2, 0, 0, 16383, True],
+]
+ieee16093_wsmp_refdf = pd.DataFrame(ieee16093_wsmp_ref, columns = ["field", "parent", "length", "eval method", "val1", "val2", "mandatory"])
+
 # GLOBAL ACCESSED DATAFRAMES/VARIABLES
 assessdf = pd.DataFrame(columns=["field", "parent", "length", "value", "compliant", "occurrences"]) # DataFrame where each row is the overalls of analysis for a field.
 faildf = pd.DataFrame(columns=["field", "parent", "length", "value", "occurrences", "fail description"])   # DataFrame where each row is the overalls of analysis for a FAILED field.
@@ -314,7 +330,7 @@ def bit_string(row, field, fieldname):
     else:
         return False
 
-#Eval Method 3: boolean
+# Eval Method 3: boolean
 def boolean_check(row, fieldval):
     if((fieldval == 0) or (fieldval == 1)):
         return True
@@ -327,132 +343,143 @@ def analyze(tree):
     global iop_fail_desc
     for packet in tree.getroot():   # recursively move through packets/protocols
         for proto in packet:
-            messageId = proto.find(".//field[@name='j2735_2016.messageId']")
-            if (messageId != None):
-                # DETERMINE MESSAGE TYPE
-                codenum = int(messageId.attrib.get('show'))
-                match codenum:
-                    case 20:    # BSM
-                        print(messageId.attrib.get('showname'))
-                        refdf = saej2735_bsm_refdf
-                    case 27:    # RSA
-                        print(messageId.attrib.get('showname'))
-                        refdf = saej2735_rsa_refdf
-                    case 19:    # SPaT
-                        print(messageId.attrib.get('showname'))
-                        refdf = saej2735_spat_refdf
-                    case 31:    # TIM
-                        print(messageId.attrib.get('showname'))
-                        refdf = saej2735_tim_refdf
-                    case 18:    # MAP
-                        print(messageId.attrib.get('showname'))
-                        refdf = saej2735_map_refdf
-                    case _:
-                        iop_overall = False
-                        # iop_fail_desc = iop_fail_desc + "Invalid messageId: " + messageId + "\n"
-                print("-------------------------------------------")
+            refdf = None
+            if ("j2735" in proto.attrib.get('name')):
+                messageId = proto.find(".//field[@name='j2735_2016.messageId']")
+                if (messageId != None):
+                    # DETERMINE MESSAGE TYPE
+                    codenum = int(messageId.attrib.get('show'))
+                    match codenum:
+                        case 20:    # BSM
+                            print(messageId.attrib.get('showname'))
+                            print("-------------------------------------------") 
+                            refdf = saej2735_bsm_refdf
+                        case 27:    # RSA
+                            print(messageId.attrib.get('showname'))
+                            print("-------------------------------------------") 
+                            refdf = saej2735_rsa_refdf
+                        case 19:    # SPaT
+                            print(messageId.attrib.get('showname'))
+                            print("-------------------------------------------") 
+                            refdf = saej2735_spat_refdf
+                        case 31:    # TIM
+                            print(messageId.attrib.get('showname'))
+                            print("-------------------------------------------") 
+                            refdf = saej2735_tim_refdf
+                        case 18:    # MAP
+                            print(messageId.attrib.get('showname'))
+                            print("-------------------------------------------") 
+                            refdf = saej2735_map_refdf
+                        case _:
+                            iop_overall = False
+                            # iop_fail_desc = iop_fail_desc + "Invalid messageId: " + messageId + "\n"
+            elif ("16093" in proto.attrib.get('name')):
+                print(proto.attrib.get('showname'))
+                print("-------------------------------------------") 
+                refdf = ieee16093_wsmp_refdf 
+                     
 
-                # SET MESSAGE REFERENCE TABLE VARIABLES FOR SEQUENCE CHECKING
-                if (not refdf.empty):
-                    mand_index = 0 
-                    while ((refdf.iloc[mand_index].get('mandatory') != True)):
-                        mand_index += 1
+            # SET MESSAGE REFERENCE TABLE VARIABLES FOR SEQUENCE CHECKING
+            if ((refdf is not None) and (not refdf.empty)):
+                mand_index = 0 
+                while ((refdf.iloc[mand_index].get('mandatory') != True)):
+                    mand_index += 1
 
-                    lastmand_index = len(refdf.index) - 1
-                    while (refdf.iloc[lastmand_index].get('mandatory') != True):
-                        lastmand_index -= 1
-                
-                    # -------IoP ANALYSIS-------
-                    for field in proto.iter():  # iteratively move through fields
-                        iop_tag = True
-                        iop_length = True
-                        iop_value = True
-                        iop_sequence = True
-                        iop_field = True
-                        iop_fail_desc = ""
+                lastmand_index = len(refdf.index) - 1
+                while (refdf.iloc[lastmand_index].get('mandatory') != True):
+                    lastmand_index -= 1
+            
+                # -------IoP ANALYSIS-------
+                for field in proto.iter():  # iteratively move through fields
+                    iop_tag = True
+                    iop_length = True
+                    iop_value = True
+                    iop_sequence = True
+                    iop_field = True
+                    iop_fail_desc = ""
 
-                        parentname = str(field.getparent().attrib.get('name'))
-                        fieldname = str(field.attrib.get('name'))
-                        fieldlen = int(field.attrib.get('size'), 10)
-                        
-                        if (fieldname == "per.optional_field_bit"): # optional field handler
-                            if ("True" in str(field.attrib.get('showname'))):
-                                fieldname = "j2735_2016." + re.findall(r'\(([^ ]+?) ', field.attrib.get('showname'))[0]
-                            else:
-                                continue
-
-                        row = refdf.loc[(refdf['field'] == fieldname) & (refdf['parent'] == parentname)]    # get row based on field name and parent name
-
-                        if ((len(row.index) != 1)): # (there should only be 1 entry per unique pair of field name and parent name)
-                            if ((len(row.index) != 0) and not row.empty):
-                                iop_tag = False
-                                iop_fail_desc = iop_fail_desc + "Invalid/Repeated tag. "
+                    parentname = str(field.getparent().attrib.get('name'))
+                    fieldname = str(field.attrib.get('name'))
+                    fieldlen = int(field.attrib.get('size'), 10)
+                    
+                    if (fieldname == "per.optional_field_bit"): # optional field handler
+                        if ("True" in str(field.attrib.get('showname'))):
+                            fieldname = "j2735_2016." + re.findall(r'\(([^ ]+?) ', field.attrib.get('showname'))[0]
                         else:
-                            # SEQUENCE CHECKING
-                            fieldmand_ref = row.get('mandatory').values[0]
-                            lastmand_reached = False
-                            if (fieldmand_ref): # if field is mandatory
-                                if (mand_index == lastmand_index):  # if reached the end of the mandatory fields in table
-                                        lastmand_reached = True
-                                if ((fieldname != refdf.iloc[mand_index].get('field')) and not lastmand_reached):   # if current (mandatory) field does not match the intended mandatory field in sequence
-                                    iop_sequence = False
-                                    iop_fail_desc = iop_fail_desc + "Sequence incorrect: should be " + refdf.iloc[mand_index].get('field') + ". "
-                                else:
-                                    if (mand_index < lastmand_index):   # if haven't reached the end of the mandatory fields in table
-                                        mand_index += 1
-                                        while ((refdf.iloc[mand_index].get('mandatory') != True) and (mand_index < lastmand_index)):    # go to next mandatory field in table
-                                            mand_index += 1
-                            print("Tag:", fieldname, ">", iop_tag)
-                            
-                            # LENGTH EVALUATION
-                            if ((fieldlen < 1) or (fieldlen > row.get('length').values[0])):
-                                iop_length = False
-                                iop_fail_desc = iop_fail_desc + "Incorrect length: " + str(fieldlen) + " should be " + str(row.get('length').values[0]) + ". "
-                            print("Length:", fieldlen, ">", iop_length)
-                            
-                            # CONVERT STRING (FROM DATAFILE) TO INT VALUES    
-                            try: 
-                                fieldval = int(field.attrib.get('show'), 10)
-                            except ValueError:
-                                fieldval = int(field.attrib.get('value'), 16) 
+                            continue
 
-                            # QUANTITATIVE (VALUE) EVALUATION
-                            eval_method = row.get('eval method').values[0]
-                            match eval_method:  # determine how the field should be evaluated based on standard
-                                case 0:
-                                    iop_value = compare_min_max(row, fieldval)
-                                case 1:
-                                    iop_value = octet_count(row, fieldlen)
-                                case 2:
-                                    iop_value = bit_string(row, field, fieldname)
-                                case 3:
-                                    iop_value = boolean_check(row, fieldval)
-                                case _:
-                                    iop_value = False
-                                    iop_fail_desc = iop_fail_desc + "Invalid evaluation method. "
-                                    continue 
-                            if (not iop_value):   # field failed evaluation
-                                iop_fail_desc = iop_fail_desc + "Value out of range. "
-                            print("Value:", fieldval, ">", iop_value) 
-                            
-                            # SAVE RESULTS
-                            if (not iop_tag or not iop_length or not iop_value or not iop_sequence):
-                                iop_field = False
-                                iop_overall = False               
-                                row_fail = faildf.loc[(faildf['field'] == fieldname) & (faildf['parent'] == parentname)]
-                                if (len(row_fail) != 0):
-                                    faildf.loc[len(faildf.index)] = [fieldname, parentname, fieldlen, fieldval, row_fail.tail(1).get('occurrences').values[0] + 1, iop_fail_desc.rstrip()]
-                                else:
-                                    faildf.loc[len(faildf.index)] = [fieldname, parentname, fieldlen, fieldval, 1, iop_fail_desc.rstrip()]
+                    row = refdf.loc[(refdf['field'] == fieldname) & (refdf['parent'] == parentname)]    # get row based on field name and parent name
 
-                            row_assess = assessdf.loc[(assessdf['field'] == fieldname) & (assessdf['parent'] == parentname) & (assessdf['compliant'] == iop_field)]
-                            if (len(row_assess) != 0):
-                                assessdf.loc[len(assessdf.index)] = [fieldname, parentname, fieldlen, fieldval, iop_field, row_assess.tail(1).get('occurrences').values[0] + 1]
+                    if ((len(row.index) != 1)): # (there should only be 1 entry per unique pair of field name and parent name)
+                        if ((len(row.index) != 0) and not row.empty):
+                            iop_tag = False
+                            iop_fail_desc = iop_fail_desc + "Invalid/Repeated tag. "
+                    else:
+                        # SEQUENCE CHECKING
+                        fieldmand_ref = row.get('mandatory').values[0]
+                        lastmand_reached = False
+                        if (fieldmand_ref): # if field is mandatory
+                            if (mand_index == lastmand_index):  # if reached the end of the mandatory fields in table
+                                    lastmand_reached = True
+                            if ((fieldname != refdf.iloc[mand_index].get('field')) and not lastmand_reached):   # if current (mandatory) field does not match the intended mandatory field in sequence
+                                iop_sequence = False
+                                iop_fail_desc = iop_fail_desc + "Sequence incorrect: should be " + refdf.iloc[mand_index].get('field') + ". "
                             else:
-                                assessdf.loc[len(assessdf.index)] = [fieldname, parentname, fieldlen, fieldval, iop_field, 1]
+                                if (mand_index < lastmand_index):   # if haven't reached the end of the mandatory fields in table
+                                    mand_index += 1
+                                    while ((refdf.iloc[mand_index].get('mandatory') != True) and (mand_index < lastmand_index)):    # go to next mandatory field in table
+                                        mand_index += 1
+                        print("Tag:", fieldname, ">", iop_tag)
+                        
+                        # LENGTH EVALUATION
+                        if ((fieldlen < 1) or (fieldlen > row.get('length').values[0])):
+                            iop_length = False
+                            iop_fail_desc = iop_fail_desc + "Incorrect length: " + str(fieldlen) + " should be " + str(row.get('length').values[0]) + ". "
+                        print("Length:", fieldlen, ">", iop_length)
+                        
+                        # CONVERT STRING (FROM DATAFILE) TO INT VALUES    
+                        try: 
+                            fieldval = int(field.attrib.get('show'), 10)
+                        except ValueError:
+                            fieldval = int(field.attrib.get('value'), 16) 
 
-                            print("Field Compliant:", iop_field)    
-                            print("Interoperable:", iop_overall, "\n")
+                        # QUANTITATIVE (VALUE) EVALUATION
+                        eval_method = row.get('eval method').values[0]
+                        match eval_method:  # determine how the field should be evaluated based on standard
+                            case 0:
+                                iop_value = compare_min_max(row, fieldval)
+                            case 1:
+                                iop_value = octet_count(row, fieldlen)
+                            case 2:
+                                iop_value = bit_string(row, field, fieldname)
+                            case 3:
+                                iop_value = boolean_check(row, fieldval)
+                            case _:
+                                iop_value = False
+                                iop_fail_desc = iop_fail_desc + "Invalid evaluation method. "
+                                continue 
+                        if (not iop_value):   # field failed evaluation
+                            iop_fail_desc = iop_fail_desc + "Value out of range. "
+                        print("Value:", fieldval, ">", iop_value) 
+                        
+                        # SAVE RESULTS
+                        if (not iop_tag or not iop_length or not iop_value or not iop_sequence):
+                            iop_field = False
+                            iop_overall = False               
+                            row_fail = faildf.loc[(faildf['field'] == fieldname) & (faildf['parent'] == parentname)]
+                            if (len(row_fail) != 0):
+                                faildf.loc[len(faildf.index)] = [fieldname, parentname, fieldlen, fieldval, row_fail.tail(1).get('occurrences').values[0] + 1, iop_fail_desc.rstrip()]
+                            else:
+                                faildf.loc[len(faildf.index)] = [fieldname, parentname, fieldlen, fieldval, 1, iop_fail_desc.rstrip()]
+
+                        row_assess = assessdf.loc[(assessdf['field'] == fieldname) & (assessdf['parent'] == parentname) & (assessdf['compliant'] == iop_field)]
+                        if (len(row_assess) != 0):
+                            assessdf.loc[len(assessdf.index)] = [fieldname, parentname, fieldlen, fieldval, iop_field, row_assess.tail(1).get('occurrences').values[0] + 1]
+                        else:
+                            assessdf.loc[len(assessdf.index)] = [fieldname, parentname, fieldlen, fieldval, iop_field, 1]
+
+                        print("Field Compliant:", iop_field)    
+                        print("Interoperable:", iop_overall, "\n")
 
     # PRINT overallS
     print("-------------------------------------------------------------------------------------------------------------------\n")
