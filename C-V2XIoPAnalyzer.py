@@ -490,6 +490,7 @@ def analyze(tree):
         print(faildf)
     print("\n-------------------------------------------------------------------------------------------------------------------\n")
     print(assessdf)
+    return
 
 def main():
    try:
@@ -501,6 +502,7 @@ def main():
    tree = etree.parse(inFile)
    print("Analyzing...\n")
    analyze(tree)
+   return
 
 if __name__ == "__main__":
     main()
