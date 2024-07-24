@@ -5,8 +5,8 @@ import pandas as pd
 # 1 = octet count (val1, 00)
 # 2 = bit string (val1, 00)
 # 3 = boolean (00, 00)
+# 4 = hashalg list (00, 00)
 
-# REFERENCE TABLES PER MESSAGE
 saej2735_bsm_ref = [    # col[0] = field name, col[1] = parent name, col[2] = length, col[3] = eval method, col[4] = ref value 1, col[5] = ref value 2, col[6] = mandatory?
     ["j2735_2016.msgCnt", "j2735_2016.coreData_element", 1, 0, 0, 127, True],  # start of coreData (mandatory)
     ["j2735_2016.id", "j2735_2016.coreData_element", 4, 1, 4, 00, True],
