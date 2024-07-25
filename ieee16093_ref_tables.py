@@ -1,11 +1,12 @@
 import pandas as pd
 
-# Eval methods: 
-# 0 = compare with max, min (val1, val2)
-# 1 = octet count (val1, 00)
-# 2 = bit string (val1, 00)
-# 3 = boolean (00, 00)
-# 4 = hashalg list (00, 00)
+# EVAL METHODS [val1, val2]: 
+# 0 = compare with min, max [min, max]
+# 1 = octet count [cnt, 00]
+# 2 = bit string [len, 00]
+# 3 = boolean [00, 00]
+# 4 = hashalg list [00, 00]
+# 5 = IA5 string [minlen, maxlen]
 
 ieee16093_wsmp_ref = [  # col[0] = field name, col[1] = parent name, col[2] = length, col[3] = eval method, col[4] = ref value 1, col[5] = ref value 2, col[6] = mandatory?
     ["16093.version", "16093", 1, 0, 3, 3, True],

@@ -12,13 +12,13 @@ from ieee16093_ref_tables import ieee16093_wsmp_refdf
 from ieee16092_ref_tables import ieee16092_spdu_refdf
 
 # GLOBAL ACCESSED DATAFRAMES/VARIABLES
-assessdf = pd.DataFrame(columns=["field", "parent", "length", "value", "compliant", "occurrences"]) # DataFrame where each row is the overalls of analysis for a field.
-faildf = pd.DataFrame(columns=["field", "parent", "length", "value", "occurrences", "fail description"])   # DataFrame where each row is the overalls of analysis for a FAILED field.
+assessdf = pd.DataFrame(columns=["field", "parent", "message", "length", "value", "compliant", "occurrences"]) # DataFrame where each row is the overalls of analysis for a field.
+faildf = pd.DataFrame(columns=["field", "parent", "message", "length", "value", "occurrences", "fail description"])   # DataFrame where each row is the overalls of analysis for a FAILED field.
 iop_overall = True
 iop_overall_fail_desc = ""
 
 # DEFINE QUANTITATIVE EVALUATION METHODS
-# Eval Method 0: compare with max, min
+# Eval Method 0: compare with min, max
 def compare_min_max(row, fieldval):
     minval = row.get('val1').values[0]
     maxval = row.get('val2').values[0]
@@ -36,8 +36,7 @@ def octet_count(row, fieldlen):
         return False
     
 # Eval Method 2: bit string
-def bit_string(row, field):
-    global iop_fail_desc
+def bit_string(row, field, iop_fail_desc):
     target_bitlen = row.get('val1').values[0]
     try:
         field_bitlen = int(re.findall("bit length (\d+)", field.attrib.get('showname'))[0])
@@ -64,6 +63,17 @@ def hashalg_list(field):
     else:
         return False
 
+# Eval Method 5: IA5 string
+def ia5str(row, fieldval, fieldlen):
+    minlength = row.get('val1').values[0]
+    maxlength = row.get('val2').values[0]
+    if (not (minlength <= fieldlen) and not (fieldlen >= maxlength)):
+        return False
+    try: 
+        fieldval.encode(encoding = "ascii")
+    except UnicodeEncodeError:
+        return False
+    return True
 
 # ANALYZE PDML METHOD: Given a tree (parsed XML file), will iterate through every field of each relevant message to determine interoperability and compliance to standards.
 def analyze(tree):
@@ -72,44 +82,39 @@ def analyze(tree):
     for packet in tree.getroot():   # recursively move through packets/protocols
         for proto in packet:
             refdf = None
+            messagename = None
             # DETERMINE MESSAGE TYPE, SET CORRESPONDING REFERENCE DATAFRAME
             if ("j2735" in proto.attrib.get('name')):   # SAE J2735
                 messageId = proto.find(".//field[@name='j2735_2016.messageId']")
                 if (messageId != None):
+                    messagename = re.findall("messageId: (.+)", messageId.attrib.get('showname'))[0]
                     codenum = int(messageId.attrib.get('show'))
                     match codenum:
                         case 20:    # BSM
-                            print(messageId.attrib.get('showname'))
-                            print("-------------------------------------------") 
                             refdf = saej2735_bsm_refdf
-                        case 27:    # RSA
-                            print(messageId.attrib.get('showname'))
-                            print("-------------------------------------------") 
+                        case 27:    # RSA 
                             refdf = saej2735_rsa_refdf
                         case 19:    # SPaT
-                            print(messageId.attrib.get('showname'))
-                            print("-------------------------------------------") 
                             refdf = saej2735_spat_refdf
-                        case 31:    # TIM
-                            print(messageId.attrib.get('showname'))
-                            print("-------------------------------------------") 
+                        case 31:    # TIM 
                             refdf = saej2735_tim_refdf
                         case 18:    # MAP
-                            print(messageId.attrib.get('showname'))
-                            print("-------------------------------------------") 
                             refdf = saej2735_map_refdf
                         case _:
                             iop_overall = False
                             iop_overall_fail_desc = iop_overall_fail_desc + "Invalid messageId: " + messageId + "\n"
             elif ("16093" in proto.attrib.get('name')): # IEEE 1609.3
-                print(proto.attrib.get('showname'))
-                print("-------------------------------------------") 
+                messagename = "WAVE Short Message Protocol"
                 refdf = ieee16093_wsmp_refdf 
             elif ("16092" in proto.attrib.get('name')): # IEEE 1609.2
-                print(proto.attrib.get('showname'))
-                print("-------------------------------------------") 
-                refdf = ieee16092_spdu_refdf 
-                     
+                messagename = "WAVE Security Signed Data"
+                refdf = ieee16092_spdu_refdf
+            else:
+                continue
+
+            if (messagename is not None):
+                print("MessageID:", messagename) 
+                print("----------------------------------------------")          
 
             # SET MESSAGE REFERENCE TABLE VARIABLES FOR SEQUENCE CHECKING
             if ((refdf is not None) and (not refdf.empty)):
@@ -130,9 +135,9 @@ def analyze(tree):
                     iop_field = True
                     iop_fail_desc = ""
 
-                    parentname = str(field.getparent().attrib.get('name'))
                     fieldname = str(field.attrib.get('name'))
                     fieldlen = int(field.attrib.get('size'), 10)
+                    parentname = str(field.getparent().attrib.get('name'))
                     
                     if (fieldname == "per.optional_field_bit"): # optional field handler
                         if ("True" in str(field.attrib.get('showname'))):
@@ -183,12 +188,15 @@ def analyze(tree):
                             case 1:
                                 iop_value = octet_count(row, fieldlen)
                             case 2:
-                                iop_value = bit_string(row, field)
+                                iop_value = bit_string(row, field, iop_fail_desc)
                             case 3:
                                 iop_value = boolean_check(fieldval)
                             case 4: 
+                                fieldval = re.findall("HashAlgorithm: (\w+)", str(field.attrib.get('showname')))[0]
                                 iop_value = hashalg_list(field)
-                                fieldval = re.findall("HashAlgorithm: (\w+)", field.attrib.get('showname'))[0]
+                            case 5: 
+                                fieldval = str(field.attrib.get('showname'))
+                                iop_value = ia5str(row, fieldval, fieldlen)
                             case _:
                                 iop_value = False
                                 iop_fail_desc = iop_fail_desc + "Invalid evaluation method. "
@@ -201,17 +209,17 @@ def analyze(tree):
                         if (not iop_tag or not iop_length or not iop_value or not iop_sequence):    # at least one T/L/V metric failed
                             iop_field = False
                             iop_overall = False
-                            row_fail = faildf.loc[(faildf['field'] == fieldname) & (faildf['parent'] == parentname)]
+                            row_fail = faildf.loc[(faildf['field'] == fieldname) & (faildf['parent'] == parentname) & (faildf['message'] == messagename)]
                             if (len(row_fail) != 0):
-                                faildf.loc[len(faildf.index)] = [fieldname, parentname, fieldlen, fieldval, row_fail.tail(1).get('occurrences').values[0] + 1, iop_fail_desc.rstrip()]
+                                faildf.loc[len(faildf.index)] = [fieldname, parentname, messagename, fieldlen, fieldval, row_fail.tail(1).get('occurrences').values[0] + 1, iop_fail_desc.rstrip()]
                             else:
-                                faildf.loc[len(faildf.index)] = [fieldname, parentname, fieldlen, fieldval, 1, iop_fail_desc.rstrip()]
+                                faildf.loc[len(faildf.index)] = [fieldname, parentname, messagename, fieldlen, fieldval, 1, iop_fail_desc.rstrip()]
 
-                        row_assess = assessdf.loc[(assessdf['field'] == fieldname) & (assessdf['parent'] == parentname) & (assessdf['compliant'] == iop_field)]
+                        row_assess = assessdf.loc[(assessdf['field'] == fieldname) & (assessdf['parent'] == parentname) & (assessdf['message'] == messagename) & (assessdf['compliant'] == iop_field)]
                         if (len(row_assess) != 0):
-                            assessdf.loc[len(assessdf.index)] = [fieldname, parentname, fieldlen, fieldval, iop_field, row_assess.tail(1).get('occurrences').values[0] + 1]
+                            assessdf.loc[len(assessdf.index)] = [fieldname, parentname, messagename, fieldlen, fieldval, iop_field, row_assess.tail(1).get('occurrences').values[0] + 1]
                         else:
-                            assessdf.loc[len(assessdf.index)] = [fieldname, parentname, fieldlen, fieldval, iop_field, 1]
+                            assessdf.loc[len(assessdf.index)] = [fieldname, parentname, messagename, fieldlen, fieldval, iop_field, 1]
 
                         print("Field Compliant:", iop_field)    
                         print("Interoperable:", iop_overall, "\n")

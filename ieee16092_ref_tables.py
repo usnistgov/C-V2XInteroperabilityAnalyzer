@@ -1,11 +1,12 @@
 import pandas as pd
 
-# Eval methods: 
-# 0 = compare with max, min (val1, val2)
-# 1 = octet count (val1, 00)
-# 2 = bit string (val1, 00)
-# 3 = boolean (00, 00)
-# 4 = hashalg list (00, 00)
+# EVAL METHODS [val1, val2]: 
+# 0 = compare with min, max [min, max]
+# 1 = octet count [cnt, 00]
+# 2 = bit string [len, 00]
+# 3 = boolean [00, 00]
+# 4 = hashalg list [00, 00]
+# 5 = IA5 string [minlen, maxlen]
 
 ieee16092_spdu_ref = [
     ["16092.version", "16092", 1, 0, 3, 3, True],

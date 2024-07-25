@@ -1,11 +1,12 @@
 import pandas as pd
 
-# Eval methods: 
-# 0 = compare with max, min (val1, val2)
-# 1 = octet count (val1, 00)
-# 2 = bit string (val1, 00)
-# 3 = boolean (00, 00)
-# 4 = hashalg list (00, 00)
+# EVAL METHODS [val1, val2]: 
+# 0 = compare with min, max [min, max]
+# 1 = octet count [cnt, 00]
+# 2 = bit string [len, 00]
+# 3 = boolean [00, 00]
+# 4 = hashalg list [00, 00]
+# 5 = IA5 string [minlen, maxlen]
 
 saej2735_bsm_ref = [    # col[0] = field name, col[1] = parent name, col[2] = length, col[3] = eval method, col[4] = ref value 1, col[5] = ref value 2, col[6] = mandatory?
     ["j2735_2016.msgCnt", "j2735_2016.coreData_element", 1, 0, 0, 127, True],  # start of coreData (mandatory)
@@ -117,6 +118,7 @@ saej2735_bsm_refdf = pd.DataFrame(saej2735_bsm_ref, columns = ["field", "parent"
 
 saej2735_spat_ref = [
     ["j2735_2016.timeStamp", "j2735_2016.value_element", 2, 0, 0, 527040, False],
+    ["j2735_2016.name", "j2735_2016.value_element", 1, 5, 1, 63, False],
     ["j2735_2016.region", "j2735_2016.id_element", 2, 0, 0, 65535, False],
     ["j2735_2016.id", "j2735_2016.id_element", 2, 0, 0, 65535, True],
     ["j2735_2016.revision", "j2735_2016.IntersectionState_element", 1, 0, 0, 127, True],
@@ -124,6 +126,7 @@ saej2735_spat_ref = [
     ["j2735_2016.moy", "j2735_2016.IntersectionState_element", 2, 0, 0, 527040, False],
     ["j2735_2016.timeStamp", "j2735_2016.IntersectionState_element", 2, 0, 0, 65535, False],
     ["j2735_2016.laneID", "j2735_2016.IntersectionState_element", 2, 0, 0, 255, False],
+    ["j2735_2016.movementName", "j2735_2016.MovementState_element", 1, 5, 1, 63, False],
     ["j2735_2016.signalGroup", "j2735_2016.MovementState_element", 1, 0, 0, 255, True],
     ["j2735_2016.eventState", "j2735_2016.MovementEvent_element", 1, 0, 0, 9, True],
     ["j2735_2016.startTime", "j2735_2016.timing_element", 2, 0, 0, 36001, False],
@@ -149,6 +152,7 @@ saej2735_rsa_ref = [
     ["j2735_2016.msgCnt", "j2735_2016.value_element", 1, 0, 0, 127, True],
     ["j2735_2016.timeStamp", "j2735_2016.value_element", 3, 0, 0, 527040, False],
     ["j2735_2016.typeEvent", "j2735_2016.value_element", 2, 0, 0, 65535, True],
+    ["j2735_2016.ITIScodes", "", 2, 0, 0, 65535, False],
     ["j2735_2016.priority", "j2735_2016.value_element", 1, 1, 1, 00, False],
     ["j2735_2016.extent", "j2735_2016.value_element", 1, 0, 0, 15, False],
     ["j2735_2016.year", "j2735_2016.utcTime", 2, 0, 0, 4095, False],
@@ -178,6 +182,7 @@ saej2735_tim_ref = [
     ["j2735_2016.msgCnt", "j2735_2016.value_element", 1, 0, 0, 127, True],
     ["j2735_2016.timeStamp", "j2735_2016.value_element", 2, 0, 0, 527040, False],
     ["j2735_2016.packetID", "j2735_2016.value_element", 9, 1, 9, 00, False],
+    ["j2735_2016.urlB", "j2735_2016.value_element", 1, 5, 1, 45, False],
     ["j2735_2016.sspTimRights", "j2735_2016.TravelerDataFrame_element", 1, 0, 0, 31, True],
     ["j2735_2016.frameType", "j2735_2016.TravelerDataFrame_element", 1, 0, 0, 3, True],
     ["j2735_2016.lat", "j2735_2016.position_element", 4, 0, -900000000, 900000001, True],
@@ -191,6 +196,7 @@ saej2735_tim_ref = [
     ["j2735_2016.durationTime", "j2735_2016.TravelerDataFrame_element", 2, 0, 0, 32000, False], # problem, should be mandatory
     ["j2735_2016.priority", "j2735_2016.TravelerDataFrame_element", 1, 0, 0, 7, True],
     ["j2735_2016.sspLocationRights", "j2735_2016.TravelerDataFrame_element", 1, 0, 0, 31, True],
+    ["j2735_2016.name", "j2735_2016.GeographicalPath_element", 1, 5, 1, 63, False],
     ["j2735_2016.region", "j2735_2016.id_element", 2, 0, 0, 65535, False],
     ["j2735_2016.id", "j2735_2016.id_element", 2, 0, 0, 65535, False],
     ["j2735_2016.lat", "j2735_2016.anchor_element", 4, 0, -900000000, 900000001, False],
@@ -211,6 +217,9 @@ saej2735_tim_ref = [
     ["j2735_2016.dWidth", "j2735_2016.attributes_element", 2, 0, -512, 511, False],
     ["j2735_2016.sspMsgRights1", "j2735_2016.TravelerDataFrame_element", 1, 0, 0, 31, True],
     ["j2735_2016.sspMsgRights2", "j2735_2016.TravelerDataFrame_element", 1, 0, 0, 31, True],
+    ["j2735_2016.itis", "j2735_2016.item", 2, 0, 1, 65535, False],
+    ["j2735_2016.text", "j2735_2016.item", 5, 5, 1, 500, False],
+    ["j2735_2016.url", "j2735_2016.TravelerDataFrame_element", 1, 5, 1, 15, False],
 ]
 saej2735_tim_refdf = pd.DataFrame(saej2735_tim_ref, columns = ["field", "parent", "length", "eval method", "val1", "val2", "mandatory"])
 
@@ -219,6 +228,7 @@ saej2735_map_ref = [
     ["j2735_2016.msgIssueRevision", "j2735_2016.value_element", 1, 0, 0, 127, True],
     ["j2735_2016.layerType", "j2735_2016.value_element", 1, 0, 0, 7, False],
     ["j2735_2016.layerID", "j2735_2016.value_element", 1, 0, 0, 100, False],
+    ["j2735_2016.name", "j2735_2016.IntersectionGeometry_element", 1, 5, 1, 63, False],    
     ["j2735_2016.region", "j2735_2016.id_element", 2, 0, 0, 65535, False],
     ["j2735_2016.id", "j2735_2016.id_element", 2, 0, 0, 65535, False],
     ["j2735_2016.revision", "j2735_2016.IntersectionGeometry_element", 1, 0, 0, 127, True],
@@ -229,6 +239,7 @@ saej2735_map_ref = [
     ["j2735_2016.type", "j2735_2016.RegulatorySpeedLimit_element", 1, 0, 0, 12, False],
     ["j2735_2016.speed", "j2735_2016.RegulatorySpeedLimit_element", 2, 0, 0, 8191, False],
     ["j2735_2016.laneID", "j2735_2016.GenericLane_element", 1, 0, 0, 255, True],
+    ["j2735_2016.name", "j2735_2016.GenericLane_element", 1, 5, 1, 63, False],
     ["j2735_2016.ingressApproach", "j2735_2016.GenericLane_element", 1, 0, 0, 15, False],
     ["j2735_2016.egressApproach", "j2735_2016.GenericLane_element", 1, 0, 0, 15, False],
     ["j2735_2016.directionalUse", "j2735_2016.laneAttributes_element", 1, 2, 2, 0, True],
