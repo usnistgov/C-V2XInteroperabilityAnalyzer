@@ -70,10 +70,30 @@ def ia5str(row, fieldval, fieldlen):
     if (not (minlength <= fieldlen) and not (fieldlen >= maxlength)):
         return False
     try: 
-        fieldval.encode(encoding = "ascii")
+        fieldval.encode(encoding = 'ascii')
     except UnicodeEncodeError:
         return False
     return True
+
+# Eval Method 6: UTF8 string
+def utf8str(row, fieldval, fieldlen):
+    minlength = row.get('val1').values[0]
+    maxlength = row.get('val2').values[0]
+    if (not (minlength <= fieldlen) and not (fieldlen >= maxlength)):
+        return False
+    try: 
+        fieldval.encode(encoding = 'UTF-8')
+    except UnicodeEncodeError:
+        return False
+    return True
+
+# Eval Method 7: signer
+def signer(field):
+    signername = re.findall("signer: (\w+)", field.attrib.get('showname'))[0]
+    if ((signername == "digest") or (signername == "certificate")):
+        return True
+    else:
+        return False
 
 # ANALYZE PDML METHOD: Given a tree (parsed XML file), will iterate through every field of each relevant message to determine interoperability and compliance to standards.
 def analyze(tree):
@@ -197,6 +217,12 @@ def analyze(tree):
                             case 5: 
                                 fieldval = str(field.attrib.get('showname'))
                                 iop_value = ia5str(row, fieldval, fieldlen)
+                            case 6:
+                                fieldval = str(field.attrib.get('showname'))
+                                iop_value = utf8str(row, fieldval, fieldlen)
+                            case 7: 
+                                fieldval = re.findall("signer: (\w+)", str(field.attrib.get('showname')))[0]
+                                iop_value = signer(field)
                             case _:
                                 iop_value = False
                                 iop_fail_desc = iop_fail_desc + "Invalid evaluation method. "

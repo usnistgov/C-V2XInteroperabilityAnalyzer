@@ -7,6 +7,8 @@ import pandas as pd
 # 3 = boolean [00, 00]
 # 4 = hashalg list [00, 00]
 # 5 = IA5 string [minlen, maxlen]
+# 6 = UTF8 string [minlen, maxlen]
+# 7 = signer [00, 00]
 
 saej2735_bsm_ref = [    # col[0] = field name, col[1] = parent name, col[2] = length, col[3] = eval method, col[4] = ref value 1, col[5] = ref value 2, col[6] = mandatory?
     ["j2735_2016.msgCnt", "j2735_2016.coreData_element", 1, 0, 0, 127, True],  # start of coreData (mandatory)
@@ -180,10 +182,10 @@ saej2735_rsa_refdf = pd.DataFrame(saej2735_rsa_ref, columns = ["field", "parent"
 
 saej2735_tim_ref = [
     ["j2735_2016.msgCnt", "j2735_2016.value_element", 1, 0, 0, 127, True],
-    ["j2735_2016.timeStamp", "j2735_2016.value_element", 2, 0, 0, 527040, False],
+    ["j2735_2016.timeStamp", "j2735_2016.value_element", 3, 0, 0, 527040, False],
     ["j2735_2016.packetID", "j2735_2016.value_element", 9, 1, 9, 00, False],
-    ["j2735_2016.urlB", "j2735_2016.value_element", 1, 5, 1, 45, False],
-    ["j2735_2016.sspTimRights", "j2735_2016.TravelerDataFrame_element", 1, 0, 0, 31, True],
+    ["j2735_2016.urlB", "j2735_2016.value_element", 20, 5, 1, 45, False],
+    ["j2735_2016.sspTimRights", "j2735_2016.TravelerDataFrame_element", 1, 0, 0, 31, False],
     ["j2735_2016.frameType", "j2735_2016.TravelerDataFrame_element", 1, 0, 0, 3, True],
     ["j2735_2016.lat", "j2735_2016.position_element", 4, 0, -900000000, 900000001, True],
     ["j2735_2016.long", "j2735_2016.position_element", 4, 0, -1799999999, 1800000001, True],
@@ -196,7 +198,7 @@ saej2735_tim_ref = [
     ["j2735_2016.durationTime", "j2735_2016.TravelerDataFrame_element", 2, 0, 0, 32000, False], # problem, should be mandatory
     ["j2735_2016.priority", "j2735_2016.TravelerDataFrame_element", 1, 0, 0, 7, True],
     ["j2735_2016.sspLocationRights", "j2735_2016.TravelerDataFrame_element", 1, 0, 0, 31, True],
-    ["j2735_2016.name", "j2735_2016.GeographicalPath_element", 1, 5, 1, 63, False],
+    ["j2735_2016.name", "j2735_2016.GeographicalPath_element", 8, 5, 1, 63, False],
     ["j2735_2016.region", "j2735_2016.id_element", 2, 0, 0, 65535, False],
     ["j2735_2016.id", "j2735_2016.id_element", 2, 0, 0, 65535, False],
     ["j2735_2016.lat", "j2735_2016.anchor_element", 4, 0, -900000000, 900000001, False],
@@ -219,7 +221,7 @@ saej2735_tim_ref = [
     ["j2735_2016.sspMsgRights2", "j2735_2016.TravelerDataFrame_element", 1, 0, 0, 31, True],
     ["j2735_2016.itis", "j2735_2016.item", 2, 0, 1, 65535, False],
     ["j2735_2016.text", "j2735_2016.item", 5, 5, 1, 500, False],
-    ["j2735_2016.url", "j2735_2016.TravelerDataFrame_element", 1, 5, 1, 15, False],
+    ["j2735_2016.url", "j2735_2016.TravelerDataFrame_element", 9, 5, 1, 15, False],
 ]
 saej2735_tim_refdf = pd.DataFrame(saej2735_tim_ref, columns = ["field", "parent", "length", "eval method", "val1", "val2", "mandatory"])
 
