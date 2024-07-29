@@ -271,7 +271,7 @@ saej2735_map_ref = [
     ["j2735_2016.dWidth", "j2735_2016.attributes_element", 2, 0, -512, 511, False],
     ["j2735_2016.dElevation", "j2735_2016.attributes_element", 2, 0, -512, 511, False],
     ["j2735_2016.lane", "j2735_2016.connectingLane_element", 1, 0, 0, 255, False],
-    ["j2735_2016.maneuver", "j2735_2016.connectingLane_element", 2, 2, 12, 0, False],
+    ["j2735_2016.maneuver", "j2735_2016.connectingLane_element", 2, 2, 12, 00, False],
     ["j2735_2016.region", "j2735_2016.remoteIntersection_element", 2, 0, 0, 65535, False],
     ["j2735_2016.id", "j2735_2016.remoteIntersection_element", 2, 0, 0, 65535, False],
     ["j2735_2016.signalGroup", "j2735_2016.Connection_element", 1, 0, 0, 255, False],
