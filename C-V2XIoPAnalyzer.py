@@ -14,6 +14,7 @@ from ieee16092_ref_tables import ieee16092_spdu_refdf
 # GLOBAL ACCESSED DATAFRAMES/VARIABLES
 assessdf = pd.DataFrame(columns=["field", "parent", "message", "length", "value", "compliant", "occurrences"]) # DataFrame where each row is the overalls of analysis for a field.
 faildf = pd.DataFrame(columns=["field", "parent", "message", "length", "value", "occurrences", "fail description"])   # DataFrame where each row is the overalls of analysis for a FAILED field.
+# skipdf = pd.DataFrame(columns=["field", "parent", "message"]) # DataFrame where each row is a skipped line (not a checked field).
 iop_overall = True
 iop_overall_fail_desc = ""
 
@@ -156,7 +157,6 @@ def analyze(tree):
                     iop_fail_desc = ""
 
                     fieldname = str(field.attrib.get('name'))
-                    fieldlen = int(field.attrib.get('size'), 10)
                     parentname = str(field.getparent().attrib.get('name'))
                     
                     if (fieldname == "per.optional_field_bit"): # optional field handler
@@ -171,6 +171,8 @@ def analyze(tree):
                         if ((len(row.index) != 0) and not row.empty):
                             iop_tag = False
                             iop_fail_desc = iop_fail_desc + "Invalid/Repeated tag. "
+                        # if (row.empty):
+                        #     skipdf.loc[len(skipdf.index)] = [fieldname, parentname, messagename]
                     else:
                         # SEQUENCE CHECKING
                         fieldmand_ref = row.get('mandatory').values[0]
@@ -188,6 +190,7 @@ def analyze(tree):
                                         mand_index += 1
                         
                         # LENGTH EVALUATION
+                        fieldlen = int(field.attrib.get('size'), 10)
                         if ((fieldlen < 1) or (fieldlen > row.get('length').values[0])):
                             iop_length = False
                             iop_fail_desc = iop_fail_desc + "Incorrect length: " + str(fieldlen) + " should be " + str(row.get('length').values[0]) + ". "
@@ -265,6 +268,7 @@ def analyze(tree):
         print(faildf)
     print("\n-------------------------------------------------------------------------------------------------------------------\n")
     print(assessdf)
+    # print(skipdf)
 
 
 def main():
