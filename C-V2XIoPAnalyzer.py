@@ -12,11 +12,11 @@ from ieee16093_ref_tables import ieee16093_wsmp_refdf
 from ieee16092_ref_tables import ieee16092_spdu_refdf
 
 # GLOBAL ACCESSED DATAFRAMES/VARIABLES
-assessdf = pd.DataFrame(columns=["field", "parent", "message", "length", "value", "compliant", "occurrences"]) # DataFrame where each row is the overalls of analysis for a field.
-faildf = pd.DataFrame(columns=["field", "parent", "message", "length", "value", "occurrences", "fail description"])   # DataFrame where each row is the overalls of analysis for a FAILED field.
+assessdf = pd.DataFrame(columns=["field", "parent", "message", "length", "value", "compliant", "occurrences"]) # DataFrame where each row is the_files of analysis for a field.
+faildf = pd.DataFrame(columns=["field", "parent", "message", "length", "value", "occurrences", "fail description"])   # DataFrame where each row is the_files of analysis for a FAILED field.
 # skipdf = pd.DataFrame(columns=["field", "parent", "message"]) # DataFrame where each row is a skipped line (not a checked field).
-iop_overall = True
-iop_overall_fail_desc = ""
+iop_file = True
+iop_file_fail_desc = ""
 
 # ------- DEFINE QUANTITATIVE EVALUATION METHODS -------
 # Eval Method 0: compare with min, max
@@ -98,17 +98,19 @@ def signer(field):
 
 # ------- ANALYZE PDML METHOD: Given a tree (parsed XML file), will iterate through every field of each relevant message to determine interoperability and compliance to standards. -------
 def analyze(tree):
-    global iop_overall
-    global iop_overall_fail_desc
+    global iop_file
+    global iop_file_fail_desc
     for packet in tree.getroot():   # recursively move through packets/protocols
+        iop_packet = True
         for proto in packet:
+            iop_message = True
             refdf = None
             messagename = None
-            # DETERMINE MESSAGE TYPE, SET CORRESPONDING REFERENCE DATAFRAME
+            # DETERMINE PROTOCOL AND MESSAGE TYPE, SET CORRESPONDING REFERENCE DATAFRAME
             if ("j2735" in proto.attrib.get('name')):   # SAE J2735
                 messageId = proto.find(".//field[@name='j2735_2016.messageId']")
                 if (messageId != None):
-                    messagename = re.findall("messageId: (.+)", messageId.attrib.get('showname'))[0]
+                    messagename = "SAE J2735: " + re.findall("messageId: (.+)", messageId.attrib.get('showname'))[0]
                     codenum = int(messageId.attrib.get('show'))
                     match codenum:
                         case 20:    # BSM
@@ -122,20 +124,20 @@ def analyze(tree):
                         case 18:    # MAP
                             refdf = saej2735_map_refdf
                         case _:
-                            iop_overall = False
-                            iop_overall_fail_desc = iop_overall_fail_desc + "Invalid messageId: " + messageId + "\n"
+                            iop_file = False
+                            iop_file_fail_desc = iop_file_fail_desc + "Invalid messageId: " + messageId + "\n"
             elif ("16093" in proto.attrib.get('name')): # IEEE 1609.3
-                messagename = "WAVE Short Message Protocol"
+                messagename = "IEEE 1609.3: WAVE Short Message Protocol"
                 refdf = ieee16093_wsmp_refdf 
             elif ("16092" in proto.attrib.get('name')): # IEEE 1609.2
-                messagename = "WAVE Security Signed Data"
+                messagename = "IEEE 1609.2: WAVE Security Signed Data"
                 refdf = ieee16092_spdu_refdf
             else:
                 continue
 
             if (messagename is not None):
-                print("MessageID:", messagename) 
-                print("----------------------------------------------")          
+                print(messagename) 
+                print("--------------------------------------------")          
 
             # SET MESSAGE REFERENCE TABLE VARIABLES FOR SEQUENCE CHECKING
             if ((refdf is not None) and (not refdf.empty)):
@@ -233,20 +235,13 @@ def analyze(tree):
                                 continue 
                         if (not iop_value):   # field failed evaluation
                             iop_fail_desc = iop_fail_desc + "Value out of range/invalid. " 
-                        
-                        # ------- PRINT FIELD RESULTS -------
-                        print("Tag:", fieldname, ">", iop_tag)
-                        print("Length:", fieldlen, ">", iop_length)
-                        print("Value:", fieldval, ">", iop_value)
-                        print("Field Compliant:", iop_field)    
-                        print("Interoperable:", iop_overall, "\n")
-                        if (iop_overall_fail_desc != ""):
-                            print(iop_overall_fail_desc)
 
                         # SAVE FIELD RESULTS
                         if (not iop_tag or not iop_length or not iop_value or not iop_sequence):    # at least one T/L/V metric failed
                             iop_field = False
-                            iop_overall = False
+                            iop_message = False
+                            iop_packet = False
+                            iop_file = False
                             row_fail = faildf.loc[(faildf['field'] == fieldname) & (faildf['parent'] == parentname) & (faildf['message'] == messagename)]
                             if (len(row_fail) != 0):
                                 faildf.loc[len(faildf.index)] = [fieldname, parentname, messagename, fieldlen, fieldval, row_fail.tail(1).get('occurrences').values[0] + 1, iop_fail_desc.rstrip()]
@@ -258,13 +253,25 @@ def analyze(tree):
                             assessdf.loc[len(assessdf.index)] = [fieldname, parentname, messagename, fieldlen, fieldval, iop_field, row_assess.tail(1).get('occurrences').values[0] + 1]
                         else:
                             assessdf.loc[len(assessdf.index)] = [fieldname, parentname, messagename, fieldlen, fieldval, iop_field, 1]
+                            
+                        # ------- PRINT FIELD RESULTS -------
+                        print("Tag:", fieldname, ">", iop_tag)
+                        print("Length:", fieldlen, ">", iop_length)
+                        print("Value:", fieldval, ">", iop_value)
+                        print("Field Compliant:", iop_field)    
+                        print("Message Interoperable:", iop_message, "\n")
+                        
+            print("***Packet Interoperable:", iop_packet, "\n")
+
+        if (iop_file_fail_desc != ""):
+            print(iop_file_fail_desc)
 
     # PRINT OVERALL RESULTS
     print("-------------------------------------------------------------------------------------------------------------------\n")
-    if (iop_overall):
-        print("Interoperability: PASS")
+    if (iop_file):
+        print("File Interoperability: PASS")
     else:
-        print("Interoperability: FAIL")
+        print("File Interoperability: FAIL")
         print(faildf)
     print("\n-------------------------------------------------------------------------------------------------------------------\n")
     print(assessdf)
