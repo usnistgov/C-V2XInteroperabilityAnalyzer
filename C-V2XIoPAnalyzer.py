@@ -1,3 +1,4 @@
+import time
 import sys
 from lxml import etree
 import re
@@ -40,7 +41,7 @@ def octet_count(row, fieldlen):
 def bit_string(row, field, iop_fail_desc):
     target_bitlen = row.get('val1').values[0]
     try:
-        field_bitlen = int(re.findall("bit length (\d+)", field.attrib.get('showname'))[0])
+        field_bitlen = int(re.findall(r"bit length (\d+)", field.attrib.get('showname'))[0])
     except IndexError:
         iop_fail_desc = iop_fail_desc + "Incorrect format for bit string. "
         return False
@@ -58,7 +59,7 @@ def boolean_check(fieldval):
 
 # Eval Method 4: hashalg list
 def hashalg_list(field):
-    hashname = re.findall("HashAlgorithm: (\w+)", field.attrib.get('showname'))[0]
+    hashname = re.findall(r"HashAlgorithm: (\w+)", field.attrib.get('showname'))[0]
     if ((hashname == "sha256") or (hashname == "sha384") or (hashname == "sm3")):
         return True
     else:
@@ -90,7 +91,7 @@ def utf8str(row, fieldval, fieldlen):
 
 # Eval Method 7: signer
 def signer(field):
-    signername = re.findall("signer: (\w+)", field.attrib.get('showname'))[0]
+    signername = re.findall(r"signer: (\w+)", field.attrib.get('showname'))[0]
     if ((signername == "digest") or (signername == "certificate")):
         return True
     else:
@@ -110,7 +111,7 @@ def analyze(tree):
             if ("j2735" in proto.attrib.get('name')):   # SAE J2735
                 messageId = proto.find(".//field[@name='j2735_2016.messageId']")
                 if (messageId != None):
-                    messagename = "SAE J2735: " + re.findall("messageId: (.+)", messageId.attrib.get('showname'))[0]
+                    messagename = "SAE J2735: " + re.findall(r"messageId: (.+)", messageId.attrib.get('showname'))[0]
                     codenum = int(messageId.attrib.get('show'))
                     match codenum:
                         case 20:    # BSM
@@ -163,7 +164,7 @@ def analyze(tree):
                     
                     if (fieldname == "per.optional_field_bit"): # optional field handler
                         if ("True" in str(field.attrib.get('showname'))):
-                            fieldname = "j2735_2016." + re.findall('\(([^ ]+?) ', field.attrib.get('showname'))[0]
+                            fieldname = "j2735_2016." + re.findall(r"\(([^ ]+?) ", field.attrib.get('showname'))[0]
                         else:
                             continue
 
@@ -211,23 +212,23 @@ def analyze(tree):
                             case 1:
                                 iop_value = octet_count(row, fieldlen)
                             case 2:
-                                if (not (re.findall("bit length", str(field.attrib.get('showname'))))):
+                                if (not (re.findall(r"bit length", str(field.attrib.get('showname'))))):
                                     continue
                                 else:
                                     iop_value = bit_string(row, field, iop_fail_desc)
                             case 3:
                                 iop_value = boolean_check(fieldval)
                             case 4: 
-                                fieldval = re.findall("HashAlgorithm: (\w+)", str(field.attrib.get('showname')))[0]
+                                fieldval = re.findall(r"HashAlgorithm: (\w+)", str(field.attrib.get('showname')))[0]
                                 iop_value = hashalg_list(field)
                             case 5: 
-                                fieldval = re.findall(": (.+)", str(field.attrib.get('showname')))[0]
+                                fieldval = re.findall(r": (.+)", str(field.attrib.get('showname')))[0]
                                 iop_value = ia5str(row, fieldval, fieldlen)
                             case 6:
-                                fieldval = re.findall(": (.+)", str(field.attrib.get('showname')))[0]
+                                fieldval = re.findall(r": (.+)", str(field.attrib.get('showname')))[0]
                                 iop_value = utf8str(row, fieldval, fieldlen)
                             case 7: 
-                                fieldval = re.findall("signer: (\w+)", str(field.attrib.get('showname')))[0]
+                                fieldval = re.findall(r"signer: (\w+)", str(field.attrib.get('showname')))[0]
                                 iop_value = signer(field)
                             case _:
                                 iop_value = False
@@ -279,6 +280,7 @@ def analyze(tree):
 
 
 def main():
+   start_time = time.time()
    try:
        inFile = sys.argv[1]
    except IndexError:
@@ -288,6 +290,8 @@ def main():
    tree = etree.parse(inFile)
    print("Analyzing...\n")
    analyze(tree)
+   end_time = time.time()
+   print("\n\n***Execution time:", (end_time - start_time), "seconds***")
 
 if __name__ == "__main__":
     main()
