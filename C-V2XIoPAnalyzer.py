@@ -13,8 +13,8 @@ from ieee16093_ref_tables import ieee16093_wsmp_refdf
 from ieee16092_ref_tables import ieee16092_spdu_refdf
 
 # GLOBAL ACCESSED DATAFRAMES/VARIABLES
-assessdf = pd.DataFrame(columns=["field", "parent", "message", "length", "value", "compliant", "occurrences"]) # DataFrame where each row is the_files of analysis for a field.
 faildf = pd.DataFrame(columns=["field", "parent", "message", "length", "value", "occurrences", "fail description"])   # DataFrame where each row is the_files of analysis for a FAILED field.
+# assessdf = pd.DataFrame(columns=["field", "parent", "message", "length", "value", "compliant", "occurrences"]) # DataFrame where each row is the_files of analysis for a field.
 # skipdf = pd.DataFrame(columns=["field", "parent", "message"]) # DataFrame where each row is a skipped line (not a checked field).
 iop_file = True
 iop_file_fail_desc = ""
@@ -104,7 +104,7 @@ def analyze(tree):
     for packet in tree.getroot():   # recursively move through packets/protocols
         iop_packet = True
         for proto in packet:
-            iop_message = True
+            iop_proto = True
             refdf = None
             messagename = None
             # DETERMINE PROTOCOL AND MESSAGE TYPE, SET CORRESPONDING REFERENCE DATAFRAME
@@ -174,6 +174,7 @@ def analyze(tree):
                         if ((len(row.index) != 0) and not row.empty):
                             iop_tag = False
                             iop_fail_desc = iop_fail_desc + "Invalid/Repeated tag. "
+                        # *IF TRACKING SKIPPED FIELDS:
                         # if (row.empty):
                         #     skipdf.loc[len(skipdf.index)] = [fieldname, parentname, messagename]
                     else:
@@ -240,28 +241,31 @@ def analyze(tree):
                         # SAVE FIELD RESULTS
                         if (not iop_tag or not iop_length or not iop_value or not iop_sequence):    # at least one T/L/V metric failed
                             iop_field = False
-                            iop_message = False
+                            iop_proto = False
                             iop_packet = False
                             iop_file = False
                             row_fail = faildf.loc[(faildf['field'] == fieldname) & (faildf['parent'] == parentname) & (faildf['message'] == messagename)]
+                            # *IF TRACKING ALL FAILED FIELDS:
                             if (len(row_fail) != 0):
                                 faildf.loc[len(faildf.index)] = [fieldname, parentname, messagename, fieldlen, fieldval, row_fail.tail(1).get('occurrences').values[0] + 1, iop_fail_desc.rstrip()]
                             else:
                                 faildf.loc[len(faildf.index)] = [fieldname, parentname, messagename, fieldlen, fieldval, 1, iop_fail_desc.rstrip()]
 
-                        row_assess = assessdf.loc[(assessdf['field'] == fieldname) & (assessdf['parent'] == parentname) & (assessdf['message'] == messagename) & (assessdf['compliant'] == iop_field)]
-                        if (len(row_assess) != 0):
-                            assessdf.loc[len(assessdf.index)] = [fieldname, parentname, messagename, fieldlen, fieldval, iop_field, row_assess.tail(1).get('occurrences').values[0] + 1]
-                        else:
-                            assessdf.loc[len(assessdf.index)] = [fieldname, parentname, messagename, fieldlen, fieldval, iop_field, 1]
+                        # *IF TRACKING ALL ACCESSED FIELDS:
+                        # row_assess = assessdf.loc[(assessdf['field'] == fieldname) & (assessdf['parent'] == parentname) & (assessdf['message'] == messagename) & (assessdf['compliant'] == iop_field)]
+                        # if (len(row_assess) != 0):
+                        #     assessdf.loc[len(assessdf.index)] = [fieldname, parentname, messagename, fieldlen, fieldval, iop_field, row_assess.tail(1).get('occurrences').values[0] + 1]
+                        # else:
+                        #     assessdf.loc[len(assessdf.index)] = [fieldname, parentname, messagename, fieldlen, fieldval, iop_field, 1]
                             
                         # ------- PRINT FIELD RESULTS -------
                         print("Tag:", fieldname, ">", iop_tag)
                         print("Length:", fieldlen, ">", iop_length)
                         print("Value:", fieldval, ">", iop_value)
-                        print("Field Compliant:", iop_field)    
-                        print("Message Interoperable:", iop_message, "\n")
-                        
+                        print("*Field Compliant:", iop_field, "\n")    
+                print("**Protocol/Message Interoperable:", iop_proto, "\n")
+
+        if (refdf is not None):
             print("***Packet Interoperable:", iop_packet, "\n")
 
         if (iop_file_fail_desc != ""):
@@ -275,7 +279,7 @@ def analyze(tree):
         print("File Interoperability: FAIL")
         print(faildf)
     print("\n-------------------------------------------------------------------------------------------------------------------\n")
-    print(assessdf)
+    # print(assessdf)
     # print(skipdf)
 
 
@@ -291,7 +295,7 @@ def main():
    print("Analyzing...\n")
    analyze(tree)
    end_time = time.time()
-   print("\n\n***Execution time:", (end_time - start_time), "seconds***")
+   print("\n\n***Execution time:", (end_time - start_time)/60 , "minutes***")
 
 if __name__ == "__main__":
     main()
