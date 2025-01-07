@@ -6,17 +6,22 @@ A Cellular Vehicle-to-Everything (C-V2X) Interoperability Analyzer based on SAE 
 
 1. Clone this repository.
 
-2. Ensure `lxml` and `pandas` python libraries are installed.
-
-3. Run the python script with the target pdml file name as argument.
+2. Ensure Python 3.12 and [PDM](https://pdm-project.org/) are installed.
+   For example, using pipx:
 
     ```shell
-    python3 C-V2XIoPAnalyzer.py example.pdml
+    pipx install pdm
+    ```
+
+3. Run the analyzer with the target PDML file name as argument.
+
+    ```shell
+    pdm run src/cv2x-interop-analyzer.py example.pdml
     ```
 
 4. Output is printed to stdout, but can be redirected or piped to a text file using the shell.
 
     ```shell
-    python3 C-V2XIoPAnalyzer.py example.pdml > output.txt
-    python3 C-V2XIoPAnalyzer.py example.pdml | tee output.txt
+    pdm run src/cv2x-interop-analyzer.py example.pdml > output.txt
+    pdm run src/cv2x-interop-analyzer.py example.pdml | tee output.txt
     ```

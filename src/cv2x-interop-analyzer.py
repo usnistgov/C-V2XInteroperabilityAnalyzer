@@ -1,8 +1,9 @@
-import time
-import sys
-from lxml import etree
 import re
+import sys
+import time
 import pandas as pd
+from lxml import etree
+
 pd.set_option('display.max_columns', None)
 pd.set_option('display.max_rows', None)
 pd.set_option('display.max_colwidth', None)
@@ -284,18 +285,18 @@ def analyze(tree):
 
 
 def main():
-   start_time = time.time()
    try:
-       inFile = sys.argv[1]
+       in_file = sys.argv[1]
    except IndexError:
        print("Error: Specify a pdml file.")
        sys.exit(1)
+   start_time = time.time()
    print("Parsing...")
-   tree = etree.parse(inFile)
-   print("Analyzing...\n")
+   tree = etree.parse(in_file)
+   print("Analyzing...")
    analyze(tree)
    end_time = time.time()
-   print("\n\n***Execution time:", (end_time - start_time)/60 , "minutes***")
+   print("\n*** Execution time:", (end_time - start_time)/60 , "minutes ***")
 
 if __name__ == "__main__":
     main()
