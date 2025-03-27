@@ -1,3 +1,35 @@
+#  NIST-developed software is provided by NIST as a public service. You may use,
+#  copy, and distribute copies of the software in any medium, provided that you
+#  keep intact this entire notice. You may improve, modify, and create
+#  derivative works of the software or any portion of the software, and you may
+#  copy and distribute such modifications or works. Modified works should carry
+#  a notice stating that you changed the software and should note the date and
+#  nature of any such change. Please explicitly acknowledge the National
+#  Institute of Standards and Technology as the source of the software.
+#
+#  NIST-developed software is expressly provided "AS IS." NIST MAKES NO WARRANTY
+#  OF ANY KIND, EXPRESS, IMPLIED, IN FACT, OR ARISING BY OPERATION OF LAW,
+#  INCLUDING, WITHOUT LIMITATION, THE IMPLIED WARRANTY OF MERCHANTABILITY,
+#  FITNESS FOR A PARTICULAR PURPOSE, NON-INFRINGEMENT, AND DATA ACCURACY. NIST
+#  NEITHER REPRESENTS NOR WARRANTS THAT THE OPERATION OF THE SOFTWARE WILL BE
+#  UNINTERRUPTED OR ERROR-FREE, OR THAT ANY DEFECTS WILL BE CORRECTED. NIST DOES
+#  NOT WARRANT OR MAKE ANY REPRESENTATIONS REGARDING THE USE OF THE SOFTWARE OR
+#  THE RESULTS THEREOF, INCLUDING BUT NOT LIMITED TO THE CORRECTNESS, ACCURACY,
+#  RELIABILITY, OR USEFULNESS OF THE SOFTWARE.
+#
+#  You are solely responsible for determining the appropriateness of using and
+#  distributing the software and you assume all risks associated with its use,
+#  including but not limited to the risks and costs of program errors,
+#  compliance with applicable laws, damage to or loss of data, programs or
+#  equipment, and the unavailability or interruption of operation. This software
+#  is not intended to be used in any situation where a failure could cause risk
+#  of injury or damage to property. The software developed by NIST employees is
+#  not subject to copyright protection within the United States.
+#
+#  Author: Eugene Song <eugene.song@nist.gov>
+#  Author: Davide Pesavento <davide.pesavento@nist.gov>
+#  Author: Tyler Wong
+
 import re
 import sys
 import time
@@ -37,7 +69,7 @@ def octet_count(row, fieldlen):
         return True
     else:
         return False
-    
+
 # Eval Method 2: bit string
 def bit_string(row, field, iop_fail_desc):
     target_bitlen = row.get('val1').values[0]
@@ -72,7 +104,7 @@ def ia5str(row, fieldval, fieldlen):
     maxlength = row.get('val2').values[0]
     if (not (minlength <= fieldlen) and not (fieldlen >= maxlength)):
         return False
-    try: 
+    try:
         fieldval.encode(encoding = 'ascii')
     except UnicodeEncodeError:
         return False
@@ -84,7 +116,7 @@ def utf8str(row, fieldval, fieldlen):
     maxlength = row.get('val2').values[0]
     if (not (minlength <= fieldlen) and not (fieldlen >= maxlength)):
         return False
-    try: 
+    try:
         fieldval.encode(encoding = 'UTF-8')
     except UnicodeEncodeError:
         return False
@@ -117,11 +149,11 @@ def analyze(tree):
                     match codenum:
                         case 20:    # BSM
                             refdf = saej2735_bsm_refdf
-                        case 27:    # RSA 
+                        case 27:    # RSA
                             refdf = saej2735_rsa_refdf
                         case 19:    # SPaT
                             refdf = saej2735_spat_refdf
-                        case 31:    # TIM 
+                        case 31:    # TIM
                             refdf = saej2735_tim_refdf
                         case 18:    # MAP
                             refdf = saej2735_map_refdf
@@ -130,7 +162,7 @@ def analyze(tree):
                             iop_file_fail_desc = iop_file_fail_desc + "Invalid messageId: " + messageId + "\n"
             elif ("16093" in proto.attrib.get('name')): # IEEE 1609.3
                 messagename = "IEEE 1609.3: WAVE Short Message Protocol"
-                refdf = ieee16093_wsmp_refdf 
+                refdf = ieee16093_wsmp_refdf
             elif ("16092" in proto.attrib.get('name')): # IEEE 1609.2
                 messagename = "IEEE 1609.2: WAVE Security Signed Data"
                 refdf = ieee16092_spdu_refdf
@@ -138,19 +170,19 @@ def analyze(tree):
                 continue
 
             if (messagename is not None):
-                print(messagename) 
-                print("--------------------------------------------")          
+                print(messagename)
+                print("--------------------------------------------")
 
             # SET MESSAGE REFERENCE TABLE VARIABLES FOR SEQUENCE CHECKING
             if ((refdf is not None) and (not refdf.empty)):
-                mand_index = 0 
+                mand_index = 0
                 while ((refdf.iloc[mand_index].get('mandatory') != True)):
                     mand_index += 1
 
                 lastmand_index = len(refdf.index) - 1
                 while (refdf.iloc[lastmand_index].get('mandatory') != True):
                     lastmand_index -= 1
-            
+
                 # ------- IoP ANALYSIS -------
                 for field in proto.iter():  # iteratively move through fields
                     iop_tag = True
@@ -162,7 +194,7 @@ def analyze(tree):
 
                     fieldname = str(field.attrib.get('name'))
                     parentname = str(field.getparent().attrib.get('name'))
-                    
+
                     if (fieldname == "per.optional_field_bit"): # optional field handler
                         if ("True" in str(field.attrib.get('showname'))):
                             fieldname = "j2735_2016." + re.findall(r"\(([^ ]+?) ", field.attrib.get('showname'))[0]
@@ -193,18 +225,18 @@ def analyze(tree):
                                     mand_index += 1
                                     while ((refdf.iloc[mand_index].get('mandatory') != True) and (mand_index < lastmand_index)):    # go to next mandatory field in table
                                         mand_index += 1
-                        
+
                         # LENGTH EVALUATION
                         fieldlen = int(field.attrib.get('size'), 10)
                         if ((fieldlen < 1) or (fieldlen > row.get('length').values[0])):
                             iop_length = False
                             iop_fail_desc = iop_fail_desc + "Incorrect length: " + str(fieldlen) + " should be " + str(row.get('length').values[0]) + ". "
-                        
-                        # CONVERT STRING (FROM DATAFILE) TO INT VALUES    
-                        try: 
+
+                        # CONVERT STRING (FROM DATAFILE) TO INT VALUES
+                        try:
                             fieldval = int(field.attrib.get('show'), 10)
                         except ValueError:
-                            fieldval = int(field.attrib.get('value'), 16) 
+                            fieldval = int(field.attrib.get('value'), 16)
 
                         # QUANTITATIVE (VALUE) EVALUATION
                         eval_method = row.get('eval method').values[0]
@@ -220,24 +252,24 @@ def analyze(tree):
                                     iop_value = bit_string(row, field, iop_fail_desc)
                             case 3:
                                 iop_value = boolean_check(fieldval)
-                            case 4: 
+                            case 4:
                                 fieldval = re.findall(r"HashAlgorithm: (\w+)", str(field.attrib.get('showname')))[0]
                                 iop_value = hashalg_list(field)
-                            case 5: 
+                            case 5:
                                 fieldval = re.findall(r": (.+)", str(field.attrib.get('showname')))[0]
                                 iop_value = ia5str(row, fieldval, fieldlen)
                             case 6:
                                 fieldval = re.findall(r": (.+)", str(field.attrib.get('showname')))[0]
                                 iop_value = utf8str(row, fieldval, fieldlen)
-                            case 7: 
+                            case 7:
                                 fieldval = re.findall(r"signer: (\w+)", str(field.attrib.get('showname')))[0]
                                 iop_value = signer(field)
                             case _:
                                 iop_value = False
                                 iop_fail_desc = iop_fail_desc + "Invalid evaluation method. "
-                                continue 
+                                continue
                         if (not iop_value):   # field failed evaluation
-                            iop_fail_desc = iop_fail_desc + "Value out of range/invalid. " 
+                            iop_fail_desc = iop_fail_desc + "Value out of range/invalid. "
 
                         # SAVE FIELD RESULTS
                         if (not iop_tag or not iop_length or not iop_value or not iop_sequence):    # at least one T/L/V metric failed
@@ -258,12 +290,12 @@ def analyze(tree):
                         #     assessdf.loc[len(assessdf.index)] = [fieldname, parentname, messagename, fieldlen, fieldval, iop_field, row_assess.tail(1).get('occurrences').values[0] + 1]
                         # else:
                         #     assessdf.loc[len(assessdf.index)] = [fieldname, parentname, messagename, fieldlen, fieldval, iop_field, 1]
-                            
+
                         # ------- PRINT FIELD RESULTS -------
                         print("Tag:", fieldname, ">", iop_tag)
                         print("Length:", fieldlen, ">", iop_length)
                         print("Value:", fieldval, ">", iop_value)
-                        print("*Field Compliant:", iop_field, "\n")    
+                        print("*Field Compliant:", iop_field, "\n")
                 print("**Protocol/Message Interoperable:", iop_proto, "\n")
 
         if (refdf is not None):
