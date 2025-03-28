@@ -134,12 +134,15 @@ def signer(field):
 def analyze(tree):
     global iop_file
     global iop_file_fail_desc
+
+    # DETERMINE PACKET AND PROTOCOL
     for packet in tree.getroot():   # recursively move through packets/protocols
         iop_packet = True
         for proto in packet:
             iop_proto = True
             refdf = None
             messagename = None
+
             # DETERMINE PROTOCOL AND MESSAGE TYPE, SET CORRESPONDING REFERENCE DATAFRAME
             if ("j2735" in proto.attrib.get('name')):   # SAE J2735
                 messageId = proto.find(".//field[@name='j2735_2016.messageId']")
@@ -226,7 +229,7 @@ def analyze(tree):
                                     while ((refdf.iloc[mand_index].get('mandatory') != True) and (mand_index < lastmand_index)):    # go to next mandatory field in table
                                         mand_index += 1
 
-                        # LENGTH EVALUATION
+                        # LENGTH EVALUATION OF FIELD
                         fieldlen = int(field.attrib.get('size'), 10)
                         if ((fieldlen < 1) or (fieldlen > row.get('length').values[0])):
                             iop_length = False
@@ -238,7 +241,7 @@ def analyze(tree):
                         except ValueError:
                             fieldval = int(field.attrib.get('value'), 16)
 
-                        # QUANTITATIVE (VALUE) EVALUATION
+                        # QUANTITATIVE (VALUE) EVALUATION OF FIELD
                         eval_method = row.get('eval method').values[0]
                         match eval_method:  # determine how the field should be evaluated based on standard
                             case 0:
@@ -315,7 +318,7 @@ def analyze(tree):
     # print(assessdf)
     # print(skipdf)
 
-
+# MAIN PROGRAM
 def main():
    try:
        in_file = sys.argv[1]
