@@ -10,7 +10,7 @@ and assure interoperability across devices and vendors.
 
 1. Install git and Python 3.12. The installation procedure varies depending on your operating system.
 
-    * On Debian and Ubuntu Linux, run `sudo apt install git python3-pip`.
+    * On Debian and Ubuntu Linux, run `sudo apt install git python3-pip` in a terminal.
     * On Windows, first download and install git from [here](https://git-scm.com/downloads/win), then download
       and install Python 3.12 from [here](https://www.python.org/downloads/). Make sure to select "Add python.exe
       to PATH" in the Python installer. Open a Git Bash terminal and navigate to the relevant directory.
